@@ -4,6 +4,7 @@ import asyncio
 from pathlib import Path
 import pymysql
 from NatsComponent import NatsComponent
+import StockQuote_pb2
 import Util
 
 nats_qt = "nats://192.168.20.185:4222"
@@ -33,6 +34,8 @@ class GenMa():
         self.querySym()
         self.preHistClosePri()
 
+        self.qt = StockQuote_pb2.StockQuote()
+
     def connect(self, nats_qt):
         self.loop.run_until_complete(GenMa.nats_qt.connect([nats_qt]))
         print("INFO:connect oms nats success:%s"%(nats_qt))
@@ -41,44 +44,50 @@ class GenMa():
         asyncio.run_coroutine_threadsafe(GenMa.nats_qt.subscribe(qt_subject, self.sub_handler_qt), loop=self.loop)
         self.loop.run_forever()
 
-    def sub_handler_qt(self):
-        pass
+    def sub_handler_qt(self, msg):
+        self.qt.ParseFromString(msg.data[16:])
+        sym = self.qt.sym
+        if sym not in self.symMap.keys(): return
+
+
 
     def dbQuery(self, cmd):
         self.cur.execute(cmd)
         return self.cur.fetchall()
 
-    def genQueryCloseCmd(self, ticker, date, rawName="*"):
-        if not ticker or not date:
-            print(f"ERROR:ticker={ticker}, date={date}")
-        return f"SELECT {rawName} FROM sliu_ycz_dprc WHERE datadate={date} AND symbol = '{ticker}'"
+    def genQueryCloseCmd(self, permid, date, rawName="*"):
+        if not permid or not date:
+            print(f"ERROR:permid={permid}, date={date}")
+
+        if rawName == "close":
+            rawName = "prccd_r_adj"
+        return f"SELECT {rawName} FROM fe_sec_dstat WHERE datadate = {date} AND permid = {permid}"
 
     def genQuerySymCmd(self):
-        return f"SELECT tic FROM fe_security WHERE permid IN (SELECT permid FROM fe_sym_set WHERE SYM_SET_NAME IN ('cn_csi_300','cn_csi_500') AND dead_date = 30000000 ORDER BY alive_date DESC)"
+        return f"SELECT tic, permid FROM fe_security WHERE permid IN (SELECT permid FROM fe_sym_set WHERE SYM_SET_NAME IN ('cn_csi_300','cn_csi_500') AND dead_date = 30000000 ORDER BY alive_date DESC)"
     
     def querySym(self):
         for line in self.dbQuery(self.genQuerySymCmd()):
             sym = line[0]
             if int(sym) >= 600000:
-                self.symMap[f"sh{line[0]}"] = {'isLess30':False, 'closeArr':[], 'sum':0}
+                self.symMap[line[0]] = {'isLess30':False, 'closeArr':[], 'sum':0, 'permid':line[1]}
             else:
-                self.symMap[f"sz{line[0]}"] = {'isLess30':False, 'closeArr':[], 'sum':0}
+                self.symMap[line[0]] = {'isLess30':False, 'closeArr':[], 'sum':0, 'permid':line[1]}
 
-    def queryClosePri(self, ticker, date):
-        for line in self.dbQuery(self.genQueryCloseCmd(ticker=ticker, date=date, rawName="close")):
+    def queryClosePri(self, permid, date):
+        for line in self.dbQuery(self.genQueryCloseCmd(permid=permid, date=date, rawName="close")):
             return line[0]
 
     def preHistClosePri(self):
         dateArr = Util.genTrdDateList(self.asofdate, self.step+1) #往前推31天，计算昨日的MA和今天的MA
-        print(dateArr, len(dateArr))
         for sym in self.symMap.keys():
             closeArr = []
             for date in dateArr:
-                closeArr.append(self.queryClosePri(sym, date))
+                closeArr.append(self.queryClosePri(self.symMap[sym]['permid'], date))
             try:
                 if (sum(closeArr[1:])/self.step)>closeArr[1]:
                     self.symMap[sym]['isLess30'] = True
-                self.symMap[sym]['closeArr'] = closeArr[1:]
+                self.symMap[sym]['closeArr'] = closeArr[:-1]
                 self.symMap[sym]['sum'] = sum(closeArr[:-1])
             except:
                 print(sym)

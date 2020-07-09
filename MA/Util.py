@@ -7,7 +7,7 @@ def genTrdDateList(asoddate, step):
     dateList = []
     now = datetime.datetime(int(asoddate[0:4]), int(asoddate[4:6]), int(asoddate[6:8]), 0, 0)
     cnt = 0
-    while len(dateList)<=step:
+    while len(dateList)<step:
         tempTime = now + datetime.timedelta(-cnt)
         cnt+=1
         if tempTime.weekday()>4:

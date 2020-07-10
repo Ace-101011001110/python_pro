@@ -12,7 +12,7 @@ from optparse import OptionParser
 nats_qt = "nats://192.168.20.185:4222"
 qt_subject = "eb.qt.ltqtick.stk.cn.>"
 
-def genMa5GetOptions():
+def genMaGetOptions():
     parser = OptionParser(description="GenMa")
     parser.add_option("--asofdate",
                         dest="asofdate",
@@ -30,7 +30,7 @@ def genMa5GetOptions():
     (options, args) = parser.parse_args()
     return (options, args)
 
-class GenMa5():
+class GenMa():
     nats_qt = None
     def __init__(self, options):
         print(f"asofdate={options.asofdate}, step={options.step}")
@@ -38,8 +38,8 @@ class GenMa5():
         self.cur = self.conn.cursor()
 
         # self.loop = asyncio.get_event_loop()
-        # if not GenMa5.nats_qt:
-        #     GenMa5.nats_qt = NatsComponent(self.loop)
+        # if not .nats_qt:
+        #     .nats_qt = NatsComponent(self.loop)
         # self.connect(nats_qt)
 
         self.asofdate = options.asofdate
@@ -58,11 +58,11 @@ class GenMa5():
         # self.qt = StockQuote_pb2.StockQuote()
 
     # def connect(self, nats_qt):
-    #     self.loop.run_until_complete(GenMa5.nats_qt.connect([nats_qt]))
+    #     self.loop.run_until_complete(.nats_qt.connect([nats_qt]))
     #     print("INFO:connect oms nats success:%s"%(nats_qt))
 
     # def subscribe(self):
-    #     asyncio.run_coroutine_threadsafe(GenMa5.nats_qt.subscribe(qt_subject, self.sub_handler_qt), loop=self.loop)
+    #     asyncio.run_coroutine_threadsafe(.nats_qt.subscribe(qt_subject, self.sub_handler_qt), loop=self.loop)
     #     self.loop.run_forever()
 
     # def sub_handler_qt(self, msg):
@@ -125,9 +125,9 @@ class GenMa5():
 
 
 if __name__ == "__main__":
-    (options, args) = genMa5GetOptions()
+    (options, args) = genMaGetOptions()
     # options.asofdate = "20200707"
-    genMa = GenMa5(options)
+    genMa = GenMa(options)
     targetSymArr = {}
     for sym in genMa.symMap.keys():
         symInfo = genMa.symMap[sym]

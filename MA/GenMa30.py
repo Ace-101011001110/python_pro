@@ -1,28 +1,48 @@
 #!/cygdrive/c/Anaconda3/python.exe
 import sys, os
-# import asyncio
+import asyncio
+import datetime
 from pathlib import Path
 import pymysql
-# from NatsComponent import NatsComponent
+from NatsComponent import NatsComponent
 import StockQuote_pb2
 import Util
+from optparse import OptionParser
 
 nats_qt = "nats://192.168.20.185:4222"
 qt_subject = "eb.qt.ltqtick.stk.cn.>"
 
-class GenMa():
+def genMa30GetOptions():
+    parser = OptionParser(description="GenMa")
+    parser.add_option("--asofdate",
+                        dest="asofdate",
+                        type = "str",
+                        help="asofdate (default: %default)",
+                        metavar="asofdate",
+                        default=datetime.datetime.now().strftime("%Y%m%d"))
+    parser.add_option("--step",
+                        dest="step",
+                        type = "int",
+                        help="step (default: %default)",
+                        metavar="step",
+                        default=30)
+
+    (options, args) = parser.parse_args()
+    return (options, args)
+
+class GenMa30():
     nats_qt = None
-    def __init__(self, asofdate):
+    def __init__(self, options):
         self.conn = pymysql.connect(host='192.168.0.56', port=3306, user='feadmin', passwd='feadmin000', db='sddb_cn')
         self.cur = self.conn.cursor()
 
-        # self.loop = asyncio.get_event_loop()
-        # if not GenMa.nats_qt:
-        #     GenMa.nats_qt = NatsComponent(self.loop)
-        # self.connect(nats_qt)
+        self.loop = asyncio.get_event_loop()
+        if not GenMa30.nats_qt:
+            GenMa30.nats_qt = NatsComponent(self.loop)
+        self.connect(nats_qt)
 
-        self.asofdate = asofdate
-        self.step = 30
+        self.asofdate = options.asofdate
+        self.step = options.step
 
         logDir = f"{os.path.dirname(os.path.abspath(__file__))}/run/{self.asofdate}"
         if not os.path.exists(logDir):
@@ -36,18 +56,19 @@ class GenMa():
 
         self.qt = StockQuote_pb2.StockQuote()
 
-    # def connect(self, nats_qt):
-    #     self.loop.run_until_complete(GenMa.nats_qt.connect([nats_qt]))
-    #     print("INFO:connect oms nats success:%s"%(nats_qt))
+    def connect(self, nats_qt):
+        self.loop.run_until_complete(GenMa30.nats_qt.connect([nats_qt]))
+        print("INFO:connect oms nats success:%s"%(nats_qt))
 
-    # def subscribe(self):
-    #     asyncio.run_coroutine_threadsafe(GenMa.nats_qt.subscribe(qt_subject, self.sub_handler_qt), loop=self.loop)
-    #     self.loop.run_forever()
+    def subscribe(self):
+        asyncio.run_coroutine_threadsafe(GenMa30.nats_qt.subscribe(qt_subject, self.sub_handler_qt), loop=self.loop)
+        self.loop.run_forever()
 
-    # def sub_handler_qt(self, msg):
-    #     self.qt.ParseFromString(msg.data[16:])
-    #     sym = self.qt.sym
-    #     if sym not in self.symMap.keys(): return
+    def sub_handler_qt(self, msg):
+        self.qt.ParseFromString(msg.data[16:])
+        sym = self.qt.sym
+        if sym not in self.symMap.keys():
+            return
 
 
 
@@ -97,7 +118,9 @@ class GenMa():
 
 
 if __name__ == "__main__":
-    genMa = GenMa("20200709")
+    (options, args) = genMa30GetOptions()
+    # options.asofdate = ""
+    genMa = GenMa30(options)
     targetSymArr = {}
     for sym in genMa.symMap.keys():
         if genMa.symMap[sym]['isLess30'] and genMa.symMap[sym]['isMore30']:

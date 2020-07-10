@@ -126,7 +126,7 @@ class GenMa5():
 
 if __name__ == "__main__":
     (options, args) = genMa5GetOptions()
-    options.asofdate = "20200707"
+    # options.asofdate = "20200707"
     genMa = GenMa5(options)
     targetSymArr = {}
     for sym in genMa.symMap.keys():

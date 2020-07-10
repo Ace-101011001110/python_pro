@@ -33,7 +33,7 @@ def genMaGetOptions():
 class GenMa():
     nats_qt = None
     def __init__(self, options):
-        print(f"asofdate={options.asofdate}, step={options.step}")
+        # print(f"asofdate={options.asofdate}, step={options.step}")
         self.conn = pymysql.connect(host='192.168.0.56', port=3306, user='feadmin', passwd='feadmin000', db='sddb_cn')
         self.cur = self.conn.cursor()
 
@@ -45,11 +45,11 @@ class GenMa():
         self.asofdate = options.asofdate
         self.step = options.step
 
-        logDir = f"{os.path.dirname(os.path.abspath(__file__))}/run/{self.asofdate}"
-        if not os.path.exists(logDir):
-            os.makedirs(logDir)
-        self.logFp = open(f"{logDir}/{os.path.splitext(os.path.basename(sys.argv[0]))[0]}.log", "w")
-        print(f"INFO: log dir: {self.logFp.name}")
+        # logDir = f"{os.path.dirname(os.path.abspath(__file__))}/run/{self.asofdate}"
+        # if not os.path.exists(logDir):
+        #     os.makedirs(logDir)
+        # self.logFp = open(f"{logDir}/{os.path.splitext(os.path.basename(sys.argv[0]))[0]}.log", "w")
+        # print(f"INFO: log dir: {self.logFp.name}")
 
         self.symMap = {}
         self.querySym()
@@ -126,13 +126,17 @@ class GenMa():
 
 if __name__ == "__main__":
     (options, args) = genMaGetOptions()
-    # options.asofdate = "20200707"
-    genMa = GenMa(options)
-    targetSymArr = {}
-    for sym in genMa.symMap.keys():
-        symInfo = genMa.symMap[sym]
-        if symInfo['ma5_0']<=symInfo['clo_0'] and symInfo['ma5_1']>symInfo['clo_1'] and symInfo['ma5_2']<=symInfo['clo_2'] and symInfo['ma5_2']>symInfo['ma5_1'] and symInfo['ma5_0']>symInfo['ma5_1']:
-            targetSymArr[sym]=[symInfo['closeArr_0'], symInfo['closeArr_1'], symInfo['closeArr_2']]
-    print(targetSymArr.keys())
+    # options.asofdate = "20200709"
+
+    dateArr = Util.genTrdDateList(options.asofdate, 10)
+    for date in dateArr:
+        options.asofdate = date
+        genMa = GenMa(options)
+        targetSymArr = {}
+        for sym in genMa.symMap.keys():
+            symInfo = genMa.symMap[sym]
+            if symInfo['ma5_0']<=symInfo['clo_0'] and symInfo['ma5_1']>symInfo['clo_1'] and symInfo['ma5_2']<=symInfo['clo_2'] and symInfo['ma5_2']>symInfo['ma5_1'] and symInfo['ma5_0']>symInfo['ma5_1']:
+                targetSymArr[sym]=[symInfo['closeArr_0'], symInfo['closeArr_1'], symInfo['closeArr_2']]
+        print(f"{date}:{targetSymArr.keys()}")
 
     genMa.conn.close()

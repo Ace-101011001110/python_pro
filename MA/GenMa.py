@@ -70,9 +70,9 @@ class GenMa():
         for line in self.dbQuery(self.genQuerySymCmd()):
             sym = line[0]
             if int(sym) >= 600000:
-                self.symMap[line[0]] = {'isLess30':False, 'closeArr':[], 'sum':0, 'permid':line[1]}
+                self.symMap[line[0]] = {'isMore30':False, 'isLess30':False, 'closeArr':[], 'sum':0, 'permid':line[1]}
             else:
-                self.symMap[line[0]] = {'isLess30':False, 'closeArr':[], 'sum':0, 'permid':line[1]}
+                self.symMap[line[0]] = {'isMore30':False, 'isLess30':False, 'closeArr':[], 'sum':0, 'permid':line[1]}
 
     def queryClosePri(self, permid, date):
         for line in self.dbQuery(self.genQueryCloseCmd(permid=permid, date=date, rawName="close")):
@@ -87,19 +87,21 @@ class GenMa():
             try:
                 if (sum(closeArr[1:])/self.step)>closeArr[1]:
                     self.symMap[sym]['isLess30'] = True
-                self.symMap[sym]['closeArr'] = closeArr[:-1]
+                if (sum(closeArr[:-1])/self.step)<=closeArr[0]:
+                    self.symMap[sym]['isMore30'] = True
+                self.symMap[sym]['closeArr'] = closeArr
                 self.symMap[sym]['sum'] = sum(closeArr[:-1])
             except:
-                print(sym)
+                pass
+                # print(sym)
 
 
 if __name__ == "__main__":
     genMa = GenMa("20200709")
-    # print(genMa.symMap, len(genMa.symMap.keys()))
     targetSymArr = {}
     for sym in genMa.symMap.keys():
-        if genMa.symMap[sym]['isLess30']:
+        if genMa.symMap[sym]['isLess30'] and genMa.symMap[sym]['isMore30']:
             targetSymArr[sym]=genMa.symMap[sym]['closeArr']
-    print(targetSymArr)
+    print(targetSymArr.keys())
 
     genMa.conn.close()

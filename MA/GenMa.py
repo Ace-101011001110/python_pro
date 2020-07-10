@@ -1,9 +1,9 @@
 #!/cygdrive/c/Anaconda3/python.exe
 import sys, os
-import asyncio
+# import asyncio
 from pathlib import Path
 import pymysql
-from NatsComponent import NatsComponent
+# from NatsComponent import NatsComponent
 import StockQuote_pb2
 import Util
 
@@ -16,10 +16,10 @@ class GenMa():
         self.conn = pymysql.connect(host='192.168.0.56', port=3306, user='feadmin', passwd='feadmin000', db='sddb_cn')
         self.cur = self.conn.cursor()
 
-        self.loop = asyncio.get_event_loop()
-        if not GenMa.nats_qt:
-            GenMa.nats_qt = NatsComponent(self.loop)
-        self.connect(nats_qt)
+        # self.loop = asyncio.get_event_loop()
+        # if not GenMa.nats_qt:
+        #     GenMa.nats_qt = NatsComponent(self.loop)
+        # self.connect(nats_qt)
 
         self.asofdate = asofdate
         self.step = 30
@@ -36,18 +36,18 @@ class GenMa():
 
         self.qt = StockQuote_pb2.StockQuote()
 
-    def connect(self, nats_qt):
-        self.loop.run_until_complete(GenMa.nats_qt.connect([nats_qt]))
-        print("INFO:connect oms nats success:%s"%(nats_qt))
+    # def connect(self, nats_qt):
+    #     self.loop.run_until_complete(GenMa.nats_qt.connect([nats_qt]))
+    #     print("INFO:connect oms nats success:%s"%(nats_qt))
 
-    def subscribe(self):
-        asyncio.run_coroutine_threadsafe(GenMa.nats_qt.subscribe(qt_subject, self.sub_handler_qt), loop=self.loop)
-        self.loop.run_forever()
+    # def subscribe(self):
+    #     asyncio.run_coroutine_threadsafe(GenMa.nats_qt.subscribe(qt_subject, self.sub_handler_qt), loop=self.loop)
+    #     self.loop.run_forever()
 
-    def sub_handler_qt(self, msg):
-        self.qt.ParseFromString(msg.data[16:])
-        sym = self.qt.sym
-        if sym not in self.symMap.keys(): return
+    # def sub_handler_qt(self, msg):
+    #     self.qt.ParseFromString(msg.data[16:])
+    #     sym = self.qt.sym
+    #     if sym not in self.symMap.keys(): return
 
 
 

@@ -124,7 +124,7 @@ class GenMa():
 
 if __name__ == "__main__":
     (options, args) = genMaGetOptions()
-    options.asofdate = "20200709"
+    # options.asofdate = "20200709"
 
     dateArr = Util.genTrdDateList(options.asofdate, 1)
     for date in dateArr:
